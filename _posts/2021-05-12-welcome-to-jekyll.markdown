@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Welcome to my persomal blog!"
+title:  "Welcome to my personal blog!"
 date: 2021-05-15 18:35:00 -0700
 categories: Introduction
 ---
