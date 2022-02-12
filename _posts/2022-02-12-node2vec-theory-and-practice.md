@@ -184,7 +184,7 @@ context_size = 10
 total_walks_per_batch = (batch_size * walks_per_node) = 2560
 num_sequences_per_rw = (walk_length - context_size + 1) = 11
 num_seq_per_batch = (total_walks_per_batch * num_seq_per_rw) = 28160
-for each sequence 1 node is the input and remaing nodes are context
+for each sequence node 1 is the input and remaining nodes are context
 and similarly for negative samples as well
 ```
 
