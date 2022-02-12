@@ -153,13 +153,13 @@ $d_{tx} = \text{distance between t and x}$
 So if we set low value for parameter *p* the walk tends to stay local to starting node and so on e.g.
 
 <p align = 'center'>
-<img src = 'https://github.com/AshishSinha5/AshishSinha5.github.io/blob/master/assets/images/high_p_low_q.JPG' width = '75%'>
+<img src = 'https://github.com/AshishSinha5/AshishSinha5.github.io/blob/master/assets/images/high_p_low_q.JPG?raw=true' width = '75%'>
 <br>
 <em>Biased Random Walk with high p and low q</em>
 </p>
 
 <p align = 'center'>
-<img src = 'https://github.com/AshishSinha5/AshishSinha5.github.io/blob/master/assets/images/low_p_high_q.JPG' width = '75%'>
+<img src = 'https://github.com/AshishSinha5/AshishSinha5.github.io/blob/master/assets/images/low_p_high_q.JPG?raw=true' width = '75%'>
 <br>
 <em>Biased Random Walk with low p and high q</em>
 </p>
