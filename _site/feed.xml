@@ -1,4 +1,246 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.0">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2022-02-12T20:26:28+05:30</updated><id>/feed.xml</id><title type="html">Ashish Kumar Sinha</title><subtitle>Let's discuss Data</subtitle><entry><title type="html">My First Draft</title><link href="/2022/02/04/my-first-draft.html" rel="alternate" type="text/html" title="My First Draft" /><published>2022-02-04T16:43:48+05:30</published><updated>2022-02-04T16:43:48+05:30</updated><id>/2022/02/04/my-first-draft</id><content type="html" xml:base="/2022/02/04/my-first-draft.html">&lt;p&gt;Draft Content&lt;/p&gt;</content><author><name></name></author><summary type="html">Draft Content</summary></entry><entry><title type="html">Welcome to my personal blog!</title><link href="/jekyll/update/2021/06/15/tutorial.html" rel="alternate" type="text/html" title="Welcome to my personal blog!" /><published>2021-06-15T20:16:31+05:30</published><updated>2021-06-15T20:16:31+05:30</updated><id>/jekyll/update/2021/06/15/tutorial</id><content type="html" xml:base="/jekyll/update/2021/06/15/tutorial.html">&lt;p&gt;You’ll find this post in your &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;_posts&lt;/code&gt; directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different ways, but the most common way is to run &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;jekyll serve&lt;/code&gt;, which launches a web server and auto-regenerates your site when a file is updated.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.0">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2022-02-12T20:50:09+05:30</updated><id>/feed.xml</id><title type="html">Ashish Kumar Sinha</title><subtitle>Let's discuss Data</subtitle><entry><title type="html">Node2Vec - Word2Vec in disguise (?)</title><link href="/2022/02/12/node2vec-theory-and-practice.html" rel="alternate" type="text/html" title="Node2Vec - Word2Vec in disguise (?)" /><published>2022-02-12T00:00:00+05:30</published><updated>2022-02-12T00:00:00+05:30</updated><id>/2022/02/12/node2vec-theory-and-practice</id><content type="html" xml:base="/2022/02/12/node2vec-theory-and-practice.html">&lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML&quot;&gt;
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [['$','$'], ['\\(','\\)']],
+      processEscapes: true
+    }
+  });
+&lt;/script&gt;
+&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+
+&lt;p&gt;Traditional ml algorithms employ tabular data structure to solve a multitudes of supervised, unsupervised and semi-supervised problems ranging from image recognition, time series prediction, sentiment analysis, etc.
+Many problems like content recommendation have been attempted to solve using tabular data structure and have been known to beat SOTA benchmarks. In recent years a lot of focus from research community on using original graph structure of the data. Researchers from Pinterest have implemented GraphSage and PinSage content recommendation algorithms which beat the SOTA benchmark recommendation algorithms which use tensor decomposition techniques.&lt;/p&gt;
+
+&lt;p&gt;Before we dig into the complex algorithms like Graph Neural Networks and concepts like message parsing and distributed graph representation learning, we start off with two significant papers which set the foundation of GraphML. They are DeepWalk and Node2Vec. In particular we’ll be focussing on Node2Vec Algorithm and how it draws parallel to classic NLP model Word2Vec.&lt;/p&gt;
+
+&lt;h3 id=&quot;word2vec&quot;&gt;Word2Vec&lt;/h3&gt;
+&lt;p&gt;Before we head into the Node2Vec model, lets look into the classic Word2Vec &lt;a href=&quot;#1&quot;&gt;[1]&lt;/a&gt; algorithm from which it draws its parallel from. Word2Vec algorithm is used for generating vector representation of words taking into account the context (i.e. the words appearing in neighbourhood) in which the word appears. The two famous architectures used to by the algorithm are CBOW and Skipgram we’ll discuss the latter. Skipgram model is a single layer neural network model we predict the context (i.e. neighbourhood words) given the inputs words.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/word2vec.jpg&quot; alt=&quot;SkipGram architecture&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;We provide one hot encoded word ($w$) vector $x$ as an input and predict the context ($c$) word $y$ from our training sample each iteration. Let the vector representation of $w$ be $v_{w}$ and that of $c$ be $v_{c}$.&lt;/p&gt;
+
+&lt;p&gt;We consequently formulate a supervised classification problem that predicts the probability of the context word given the input word using a softmax function i.e. -&lt;/p&gt;
+
+\[P(c|w) = \frac{exp(v_{c}.v_{w})}{\Sigma_{w^{'} \in V}exp(v_{c}.v_{w^{'}})}\]
+
+&lt;p&gt;Now lets say our corpus contains around $50k$ unique words and our projection layer is of 300 dimensions therefore size of weight matrix W is 50kX300 and W’ is 300X50K meaning at each iteration of training we update around 30M parameters which is computationally intensive and in some cases infeasible.&lt;/p&gt;
+
+&lt;p&gt;The word2vec paper addresses this issue and comes up with an efficient way to optimize the weights by changing the problem from calculating $p(c|w)$ to if the pair occurs together in the corpus. Now we’re essentially focusing on learning high quality embeddings rather than modelling the word distribution in the natural language. They formulate there problem by using a technique(/heuristic) known as &lt;strong&gt;negative sampling&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now given a (word, context) pair the probability of (word, context) pair appearing together can be modelled by using a logistic regression classifier as follows -&lt;/p&gt;
+
+\[\begin{aligned}
+P(+|w,c) &amp;amp;=&amp;amp; &amp;amp;\sigma(v_w.v_c)&amp;amp; \\
+&amp;amp;=&amp;amp; &amp;amp;\frac{1}{1+exp(-v_w^Tv_c)}&amp;amp;
+\end{aligned}\]
+
+&lt;p&gt;$\therefore$ the probability of c not appearing in context of w is&lt;/p&gt;
+
+\[\begin{aligned}
+P(-|w,c) &amp;amp;=&amp;amp; &amp;amp;1-P(+|w,c)&amp;amp; \\
+&amp;amp;=&amp;amp; &amp;amp;1-\frac{1}{1+exp(-v_w^Tv_c)}&amp;amp;\\
+&amp;amp;=&amp;amp; &amp;amp;\sigma(-v_w.v_c)&amp;amp;
+\end{aligned}\]
+
+&lt;p&gt;Now for each positive sample (word, context), we randomly sample some negative examples for each input word i.e the words not appearing in the context of the w.&lt;/p&gt;
+
+&lt;p&gt;$\therefore$ the final objective function that we aim to optimise for skipgram model with negative sampling (SGNS) is&lt;/p&gt;
+
+\[L_{SGNS} = -log[P(+|w,c_{pos}) \prod_{i=1}^{k} P(-|w,c_{neg_{i}})]\]
+
+&lt;p&gt;Where we have k negative samples for each positive samples. Which is computationally more efficient.&lt;/p&gt;
+
+&lt;h3 id=&quot;node2vec&quot;&gt;Node2Vec&lt;/h3&gt;
+
+&lt;p&gt;Now that we have an overview of how Word2Vec algorithm works we can move forward with main topic of discussion &lt;strong&gt;Node2Vec&lt;/strong&gt; &lt;a href=&quot;#2&quot;&gt;[2]&lt;/a&gt;. To illustrate the workings of the algorithm we’ll investigate an open-sourced dataset known as &lt;strong&gt;Cora&lt;/strong&gt; which consists of 2708 scientific publications classified into one of seven classes. There are directed links between two publications if one cited by the other i.e.&lt;/p&gt;
+&lt;p align=&quot;center&quot;&gt;
+&lt;i&gt;ID of cited paper --&amp;gt; ID of citing paper&lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;The end goal is to come up with an embedding of the nodes (i.e. publications) of the graph and see if we can form clusters of different classes of publications without explicitly giving that information to the model.&lt;/p&gt;
+
+&lt;p&gt;We’ll be using PyTorch Geometric library to run the algorithm. Lets Load our data, torch geometric library comes pre-packaged with the Cora dataset so we can directly load from the library itself.&lt;/p&gt;
+
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;torch_geometric.datasets&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Planetoid&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;dataset&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Planetoid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;root&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'data/'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'cora'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sa&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'Number of graphs in the data - &lt;/span&gt;&lt;span class=&quot;si&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;len_data&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sa&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'Number of classes in the data - &lt;/span&gt;&lt;span class=&quot;si&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;num_classes&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Number of graphs in the data - 1
+Number of classes in the data - 7
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;There is one graph in the dataset and the nodes are classified into seven different categories. Lets some of the statistics of the graph&lt;/p&gt;
+
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dataset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Data(x=[2708, 1433], edge_index=[2, 10556], y=[2708], train_mask=[2708], val_mask=[2708], test_mask=[2708])
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The graph contains 2708 nodes each node can be represented by multi-hot encoded vectors containing info about the words in the publication. We wont be using these vectors for Node2Vec algorithm. There are 10556 directed edges. Lets initialise the Node2Vec algorithm using the given data.&lt;/p&gt;
+
+&lt;p&gt;Code for this blog is taken form &lt;a href=&quot;https://github.com/pyg-team/pytorch_geometric/blob/master/examples/cora.py&quot;&gt;here&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;torch&lt;/span&gt;
+&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;torch_geometric.nn&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Node2Vec&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;device&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'cuda'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;torch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cuda&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;is_available&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'cpu'&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;model&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Node2Vec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;edge_index&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;embedding_dim&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;128&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;walk_length&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+             &lt;span class=&quot;n&quot;&gt;context_size&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;walks_per_node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+             &lt;span class=&quot;n&quot;&gt;num_negative_samples&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;q&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sparse&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;True&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;device&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; 
+
+&lt;span class=&quot;n&quot;&gt;loader&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;batch_size&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;128&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shuffle&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;False&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;num_workers&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Let’s go through all the parameters of the model one by one.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;em&gt;data.edge_index&lt;/em&gt; - provides the the array of size (2, n_edges) where each row is a pair of node IDs having a directed edge between them&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;embedding_dim&lt;/em&gt; - embedding dimension of the nodes&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;walk_length&lt;/em&gt; - length of random walk from a given node&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;context_size&lt;/em&gt; - length sliding window on a random walk to create training instances for the model&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;walks_per_node&lt;/em&gt; - number of random walks per node&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;num_negative_samples&lt;/em&gt; - number of negative samples for each instances, negative samples can be treated as fake random walks which are not actually present in the graph.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Node2Vec makes graph sequential via random walks, these random walks are biased with two parameters which controls whether the walk  stays local (BFS)  or explores (DFS) . They are -&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;em&gt;p&lt;/em&gt; - parameter of biased random walk, larger the p walk tends to explore more&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;q&lt;/em&gt; - parameter of biased random walk, larger the q walk tends stay close to stating node&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Let’s say we start from node &lt;em&gt;t&lt;/em&gt; then the unbiased probability of going to neighbourhood node &lt;em&gt;v&lt;/em&gt; is -&lt;/p&gt;
+
+\[P(N_{i+1} = t | N_{i} = u) = \pi_{tv}/Z\]
+
+&lt;p&gt;$\pi_{tv} = \text{transition probability from t to v}$&lt;/p&gt;
+
+&lt;p&gt;$Z = \text{Normalizing Factor}$&lt;/p&gt;
+
+&lt;p&gt;We can turn this into a biased second order RW by defining a search bias parameter $\alpha$.&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img width=&quot;33%&quot; src=&quot;/assets/images/biased_rw.jpg&quot; /&gt;
+&lt;/p&gt;
+
+\[\begin{align}
+\alpha_{tx} = 
+\begin{cases}
+\frac{1}{p} &amp;amp;\text{ if }&amp;amp; d_{tx} = 0 \\
+1 &amp;amp;\text{ if }&amp;amp; d_{tx} = 1 \\
+\frac{1}{q} &amp;amp;\text{ if }&amp;amp; d_{tx} = 2
+\end{cases}
+\end{align}\\\]
+
+&lt;p&gt;$\pi_{tx} = \alpha_{tx}*w_{tx}$&lt;/p&gt;
+
+&lt;p&gt;$d_{tx} = \text{distance between t and x}$&lt;/p&gt;
+
+&lt;p&gt;So if we set low value for parameter &lt;em&gt;p&lt;/em&gt; the walk tends to stay local to starting node and so on e.g.&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;/assets/images/high_p_low_q.jpg&quot; width=&quot;75%&quot; /&gt;
+&lt;br /&gt;
+&lt;em&gt;Biased Random Walk with high p and low q&lt;/em&gt;
+&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;/assets/images/low_p_high_q.jpg&quot; width=&quot;75%&quot; /&gt;
+&lt;br /&gt;
+&lt;em&gt;Biased Random Walk with low p and high q&lt;/em&gt;
+&lt;/p&gt;
+
+&lt;p&gt;Now that we have initialised our model, we can go ahead and prepare sequences for Node2Vec and consecutively train the model. We can create a loader for the model that create sequences in batches -&lt;/p&gt;
+
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;loader&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;batch_size&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;128&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shuffle&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;False&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;num_workers&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;idx&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rw&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;enumerate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shape&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shape&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;torch.Size([28160, 10]) torch.Size([28160, 10])
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-note&quot;&gt;The way PyTorch preprares the qequences is as follows - 
+batch_size = 128
+walks_per_node = 20
+walk_length = 20
+context_size = 10
+total_walks_per_batch = (batch_size * walks_per_node) = 2560
+num_sequences_per_rw = (walk_length - context_size + 1) = 11
+num_seq_per_batch = (total_walks_per_batch * num_seq_per_rw) = 28160
+for each sequence 1 node is the input and remaing nodes are context
+and similarly for negative samples as well
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now lets train the model -&lt;/p&gt;
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;train&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;():&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;train&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;total_loss&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pos_rw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;neg_rw&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tqdm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;optimizer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;zero_grad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;loss&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loss&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pos_rw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;device&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;neg_rw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;device&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;loss&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;backward&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;optimizer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;step&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;total_loss&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;loss&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;item&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;total_loss&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# test function to evaluste the accuracy of the model
+&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;@&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;torch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;no_grad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;():&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;eval&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;z&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;acc&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;z&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;train_mask&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;train_mask&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+                     &lt;span class=&quot;n&quot;&gt;z&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;test_mask&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;test_mask&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+                     &lt;span class=&quot;n&quot;&gt;max_iter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;150&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;acc&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;epoch&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;201&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;loss&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;train&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;acc&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sa&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'Epoch: &lt;/span&gt;&lt;span class=&quot;si&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;epoch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;02&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;, Loss: &lt;/span&gt;&lt;span class=&quot;si&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loss&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;, Acc: &lt;/span&gt;&lt;span class=&quot;si&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;acc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;100%|███████████████████████████████████████████████████████████████████████████████████| 22/22 [00:00&amp;lt;00:00, 35.56it/s]
+
+
+Epoch: 01, Loss: 8.1546, Acc: 0.1820
+
+
+100%|███████████████████████████████████████████████████████████████████████████████████| 22/22 [00:00&amp;lt;00:00, 34.34it/s]
+
+
+Epoch: 02, Loss: 6.1120, Acc: 0.2160
+
+...
+
+100%|███████████████████████████████████████████████████████████████████████████████████| 22/22 [00:00&amp;lt;00:00, 39.94it/s]
+
+
+Epoch: 199, Loss: 0.8245, Acc: 0.7280
+
+
+100%|███████████████████████████████████████████████████████████████████████████████████| 22/22 [00:00&amp;lt;00:00, 40.34it/s]
+
+Epoch: 200, Loss: 0.8255, Acc: 0.7280
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Extracting the learned node embeddings from the trained model and projecting it down to two dimensions -&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;/assets/images/embeddings.jpg&quot; width=&quot;75%&quot; /&gt;
+&lt;/p&gt;
+
+&lt;p&gt;Note that we’ve not explicitly used the node labels in the model neither have we used the feature vector of the node, these embeddings are generated by simply using the citation network. Can we generate better embeddings by using the feature vector? (Spoiler Alert : We can, &lt;strong&gt;GNNs!!&lt;/strong&gt;)&lt;/p&gt;
+
+&lt;h3 id=&quot;references--&quot;&gt;References -&lt;/h3&gt;
+
+&lt;p&gt;&lt;a id=&quot;1&quot;&gt;[1]&lt;/a&gt;  Tomas Mikolov, Ilya Sutskever, Kai Chen, Greg Corrado, &amp;amp; Jeffrey Dean. (2013). Distributed Representations of Words and Phrases and their Compositionality.&lt;/p&gt;
+
+&lt;p&gt;&lt;a id=&quot;2&quot;&gt;[2]&lt;/a&gt; Aditya Grover, &amp;amp; Jure Leskovec. (2016). node2vec: Scalable Feature Learning for Networks.&lt;/p&gt;</content><author><name></name></author><summary type="html"></summary></entry><entry><title type="html">My First Draft</title><link href="/2022/02/04/my-first-draft.html" rel="alternate" type="text/html" title="My First Draft" /><published>2022-02-04T16:43:48+05:30</published><updated>2022-02-04T16:43:48+05:30</updated><id>/2022/02/04/my-first-draft</id><content type="html" xml:base="/2022/02/04/my-first-draft.html">&lt;p&gt;Draft Content&lt;/p&gt;</content><author><name></name></author><summary type="html">Draft Content</summary></entry><entry><title type="html">Welcome to my personal blog!</title><link href="/jekyll/update/2021/06/15/tutorial.html" rel="alternate" type="text/html" title="Welcome to my personal blog!" /><published>2021-06-15T20:16:31+05:30</published><updated>2021-06-15T20:16:31+05:30</updated><id>/jekyll/update/2021/06/15/tutorial</id><content type="html" xml:base="/jekyll/update/2021/06/15/tutorial.html">&lt;p&gt;You’ll find this post in your &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;_posts&lt;/code&gt; directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different ways, but the most common way is to run &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;jekyll serve&lt;/code&gt;, which launches a web server and auto-regenerates your site when a file is updated.&lt;/p&gt;
 
 &lt;p&gt;Jekyll requires blog post files to be named according to the following format:&lt;/p&gt;
 
