@@ -1,6 +1,9 @@
 ---
 layout: post
 title: Graph Convolutional Nets - Basics
+date: 2022-03-06 17:30
+category: blog
+headerImage: false
 ---
 
 
@@ -197,8 +200,6 @@ Comparing the embeddings of the two models projected down to 2D space we see sig
 As we can see classes are much better segregated for GCN model.
 
 Now there can be multiple ways we can generate and aggregate messages while convolving over neighbourhood edges e.g GraphSage algorithm concatenates the node information rather than summing it with neighbourhood nodes. We can also create an aggregation mechanism where we attend to the neighbourhood messages according to a predefined set of weights this method is known as **Graph Attention Network (GAT)** [[3]](#3) details of which can be discussed in future blogs.
-
-
 
 ## References
 

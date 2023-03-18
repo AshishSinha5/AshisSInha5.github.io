@@ -1,8 +1,9 @@
 ---
 layout: post
 title:  "Welcome to my personal blog!"
-date:   2021-06-15 20:16:31
-categories: blog
+date: 2021-06-15 20:16
+category: blog
+headerImage: false
 ---
 
 ### Stay Tuned for more updates
