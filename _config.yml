@@ -1,9 +1,9 @@
 # main text of home
-title: John Doe
-bio: A Person who travels the world eating noodles
+title: Ashish Kumar Sinha
+bio: Machine Learning Engineer and Researcher.
 
 # twitter summary info
-description: A blog about technology and stuff related
+description: A blog about my exploits in the Data Science and ML domain. 
 
 # if it's an external image, update below for true
 # better with square images
@@ -12,7 +12,7 @@ picture: assets/images/profile.jpg
 
 # your site color theme, true for dark theme, 
 # false to light theme, auto to switch with system.
-dark-theme: auto
+dark-theme: false
 
 # If you want to include your resume, set to true
 # and specify source (external or local).
@@ -20,7 +20,7 @@ resume: true
 resume-external: true
 resume-url: https://google.com/?q=my+resume
 
-url: https://sergiokopplin.github.io/indigo
+url: https://ashishsinha5.github.io/
 # your url: https://USERNAME.github.io
 
 permalink: /:title/
