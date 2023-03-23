@@ -4,6 +4,9 @@ title: Node2Vec - Word2Vec in disguise (?)
 date: 2022-02-12 17:30
 category: blog
 headerImage: false
+tag:
+- gnn
+- algorithm
 ---
 
 {%- include mathjax.html -%}
