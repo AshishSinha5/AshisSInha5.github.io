@@ -4,6 +4,9 @@ title: Graph Convolutional Nets - Basics
 date: 2022-03-06 17:30
 category: blog
 headerImage: false
+tag:
+- gnn
+- algorithm
 ---
 
 
