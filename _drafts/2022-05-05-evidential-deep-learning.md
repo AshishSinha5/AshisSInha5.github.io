@@ -32,11 +32,20 @@ As we see in the above example the rotated images of digits are misclassified tw
 
 ![EDL-Rot-one](/assets/images/edl_rot_1.png)
 
-We see that the model predicts wrong labels for the digit one with high confidence as we increase the rotation angle of the image. To solve the above problem, an **evidential deep learning** technique is proposed where the model is incorporated with the capability of assessing the uncertainty of the input distribution.
+We see that the model predicts wrong labels for the digit one with high confidence as we increase the rotation angle of the image. To solve the above problem, an **evidential deep learning** technique is proposed where the model is incorporated with the capability of assessing the **uncertainty** of the input distribution.
 
 # What is Evidential deep learning
-## Types of uncertainity
-## 
+
+The above problem of predicting the wrong labels with high confidence can be solved by introducing a mechanism to assess the uncertainty of the model output. There are two types of uncertainties - 
+
+- **Aleatory uncertainty**: This is the type of uncertainty that is inherent in a system or process and arises due to the natural randomness or variability of the system. For example, the outcome of a coin toss or a dice roll is aleatory uncertainty.
+
+- **Epistemic uncertainty**: This type of uncertainty arises due to a lack of knowledge or information about a system or process. It can occur when there are limitations in measurement techniques, incomplete or inaccurate data, or when the system is poorly understood.
+
+# How do we account for uncertainty
+
+
+
 # Applications
 # Demo
 # References
