@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Evidential Deep Learning
-date: 2022-03-06 17:30
+date: 2022-05-06 17:30
 category: blog
 headerImage: false
 tag:
