@@ -37,16 +37,58 @@ The application of Machine learning on graphs leveraging their structure is acti
 
 For a convolution operation, we have a kernel $f$ and an input signal $g$, we reverse the input signal to create a _queue_ that slides into the kernel to compute the convolved value or _vice versa_. 
 
-![1-D convolution](/assets/images/understanding_graph_convolutions/1D_convolution.gif)
-*Fig.1 -  1D Convolution (flipping the kernel and sliding it across the input signal) [source](https://e2eml.school/convolution_one_d.html).*
+![1-D convolution](/assets/images/understanding_graph_convolutions/1D_convolution.gif){:style="display:block; margin-left:auto; margin-right:auto"}
+<div align = 'center'>Fig.1 -  1D Convolution (flipping the kernel and sliding it across the input signal) <a href = "https://e2eml.school/convolution_one_d.html">[source]</a>.</div>
 
 For image processing, we use convolution to extract salient features of the image e.g. edges, lines, etc. We use cascading convolution operation for building CNNs which in turn are used to solve a variety of computer vision problems.
 
-![2D Convolution](/assets/images/understanding_graph_convolutions/330px-2D_Convolution_Animation.gif)
 
-*Fig.2 - 2D-Convolution used in CNNs [source](https://en.wikipedia.org/wiki/Convolution#Discrete_convolution).*
+![2D Convolution](/assets/images/understanding_graph_convolutions/330px-2D_Convolution_Animation.gif){:style="display:block; margin-left:auto; margin-right:auto"}
+<div align = 'center'>Fig.2 - 2D-Convolution used in CNNs 
+<a href="https://en.wikipedia.org/wiki/Convolution#Discrete_convolution">[source]</a>.</div>
+
+
+We note these convolution work as feature extractors and operate on inputs of fixed size. We aim to generalize these convolutions to graphs where we work with variable-size inputs. These graph convolutions will act as *feature aggregators* for a node and its neighbors. 
 
 # Generalizing convolutions for graph structure
+
+We define graphs as data structures consisting of tuple $G = (V, E)$ where $V$ is a finite set of elements and $E$ is a subset of $(V \times V)$. Graphs occur naturally in many domains such as social networks, citation networks, molecular structure, routes,  etc.
+
+The study of graphs is one of the main focus areas in mathematics and lately, the ML community is trying to leverage the native graph structure of the data to extract some patterns out of it.
+
+In this section, we aim to generalize convolutions on graphs which will enable us to perform various graph machine learning techniques on it. We begin by laying down some foundation.
+
+For the entire section we'll consider a graph $G = (V, E)$ with $V = \\{v_1, v_2, v_3, ..., v_n\\}$ with  $\|V\| = n$ and $\|E\| = m$.
+
+Graphs are represented in many ways - 
+- Adjacency Matrix
+- Adjacency List
+- Edge List
+
+## Adjacency Matrix
+Adjacency Matrix is a $n \times n$ matrix $A_G = a_{ij}$ where 
+
+$$
+a_{ij} = 1_E(e_{ij})
+$$
+
+For an undirected graph, $A$ is symmetric.
+## Incidence Matrix
+Incidence Matrix is a $|E| \times |V|$ $(m \times n)$ matrix $\triangledown$ where -
+
+$$
+\begin{equation*}
+  \triangledown_{ev} =\begin{cases}
+    -1, & \text{if $v$ is the initial vertex of edge $e$.}\\
+    1, & \text{if $v$ is the terminal vertex of edge $e$.}\\
+    0, & \text{if $v$ is not in $e$}
+  \end{cases}
+\end{equation*}
+$$
+*add example*
+
+Incidence matrix is known as a discrete differential operator 
+## Laplacian 
 
 - Adjacency matrix, incidence matrix, laplacian 
     - uses of laplacian
@@ -58,7 +100,6 @@ For image processing, we use convolution to extract salient features of the imag
     - Drawbacks
 - Tchebyshev's polynomial 
 - Fast spectral convolution on graphs 
-
 
 # Implementation in Python
 
