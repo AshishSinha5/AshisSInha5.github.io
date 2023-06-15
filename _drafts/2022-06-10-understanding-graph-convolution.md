@@ -69,10 +69,24 @@ Graphs are represented in many ways -
 Adjacency Matrix is a $n \times n$ matrix $A_G = a_{ij}$ where 
 
 $$
-a_{ij} = 1_E(e_{ij})
+\begin{equation*}
+    a_{ij} = \begin{cases}
+    w_{ij}, & \text{if $e_{ij} \in E$. } \\
+    0, & \text{otherwise}
+    \end{cases}
+\end{equation*}
 $$
 
 For an undirected graph, $A$ is symmetric.
+
+## Functions on a graph
+
+Given a graph $G$ with vertex set $V$ with $k$ dimensional feature vector of vertex $i$ as $v_i \in R^k$. A function on this graph is defined as - 
+$$
+f : V \rightarrow R^k \\
+f = (f(v_1), f(v_2), f(v_3), ..., f(v_k))
+$$
+
 ## Incidence Matrix
 Incidence Matrix is a $|E| \times |V|$ $(m \times n)$ matrix $\triangledown$ where -
 
@@ -85,10 +99,53 @@ $$
   \end{cases}
 \end{equation*}
 $$
-*add example*
+*add example.*
 
-Incidence matrix is known as a discrete differential operator 
+Incidence matrix is known as a discrete differential operator, i.e. for any function $f$ on the vertex set $V$, $(\triangledown f)e_{ij} = f(v_j) - f(v_i)$
+
+
+
 ## Laplacian 
+Laplacian of a matrix a given by 
+
+$$
+L = \triangledown^T\triangledown
+$$
+
+and is related to the adjacency matrix $A$ by the following relation  - 
+
+$$
+L = D - W
+$$
+
+
+where $D = D_{ii} = d(i)$ and $W$ is the edge weight matrix.
+When we talk about the laplacian we usually mean normalized Laplacian matrix given by - 
+
+$$
+\begin{align*}
+L =& D^{-1/2}LD^{-1/2} \\
+  =& I - D^{-1/2}WD^{-1/2}
+\end{align*}
+$$
+
+### Laplacian as an operator and quadratic form
+
+The laplacian can viewed as an operator $Lf = (D - A)f$ and we can prove that -
+
+$$
+Lf(v_i) = \Sigma_{j = 1}^{n} w_{ij}(f_i - f_j)
+$$
+
+It can also be viewed as a quadratic form - 
+
+$$
+f^TLf = \Sigma_{j = 1}^{n}w_{ij}(f_i - f_j)^2
+$$
+
+We see that 
+
+### Laplacian as an operator
 
 - Adjacency matrix, incidence matrix, laplacian 
     - uses of laplacian
