@@ -1,6 +1,6 @@
 ---
 layout: post
-title: ":rocket: huberLLM - QnA bot for HubermanLabs Podcast using LLMs and Langchains"
+title: ":rocket: huberLLM - Retrieval Augmented LLM for Huberman Podcast"
 date: 2023-07-19 8:30
 category: blog
 headerImage: false
@@ -9,10 +9,11 @@ tag:
 - project
 ---
 
-I aim to build a Search Retrieval bot using Huberman Labs podcast. I would provide context to the LLMs using the `Langchain` library and the LLMs will answer my natural language query based on documents provided. The flow information is show in the following flow diagram - 
+I aim to build a Search Retrieval bot using Huberman Labs podcast. I would provide context to the LLMs using the `Langchain` library and the LLMs will answer my natural language query based on documents provided. The flow information is shown in the following flow diagram - 
 
 ![LLm App flow](/assets/images/llm-app-flow.png)
 
+Before we create our huberLLM, we need to acquire the podcast transcripts from the web. I have written a simple python script to achieve that task and it can be found [here](https://gist.github.com/AshishSinha5/e0c6a85e6745608632717acfb3213453). 
 
 ```python
 import os
@@ -45,9 +46,7 @@ from transformers import pipeline
 
 ## Data Cleaning 
 
-`Langchain` `version 0.0.220` has a bug in Document Loader class when it reads a text file and finds a [] it gives a `JSON decode error`
-
-Simple workaround is to clean the files before passing it to the directory loader (source https://github.com/hwchase17/langchain/issues/5707#issuecomment-1586014698)
+`Langchain` `version 0.0.220` has a bug in the Document Loader class when it reads a text file and finds a [] it gives a `JSON decode error`A simple workaround is to clean the files before passing it to the directory loader (source [https://github.com/hwchase17/langchain/issues/5707#issuecomment-1586014698](https://github.com/hwchase17/langchain/issues/5707#issuecomment-1586014698))
 
 Alternatively we could change the `loader class` to `TextLoader` without having to clean the docs.
 
@@ -86,11 +85,9 @@ We can use multiple data connectors in langchains -
 - Document Transformers - Split docs, convert to QnA, drop redundant documents.
 - Text Embedding Models - Unstructured text to embedding
 - Vector store - store and search over embedded data
-- Retriever -query your data
+- Retriever -query your dataIn this section, we'll be using document loader to load our Huberman podcast transcripts
 
-In this section we'll be using document loader to load our Huberman podcast transcripts
-
-We are using the `TextLoader` to load plain text files to avoid any parsing errors. We can also use the other options available such `multithreading`, `silenterrors`, etc. (see https://python.langchain.com/docs/modules/data_connection/document_loaders/how_to/file_directory)
+We are using the `TextLoader` to load plain text files to avoid any parsing errors. We can also use the other options available such `multithreading`, `silenterrors`, etc. (see [https://python.langchain.com/docs/modules/data_connection/document_loaders/how_to/file_directory](https://python.langchain.com/docs/modules/data_connection/document_loaders/how_to/file_directory))
 
 
 ```python
@@ -126,7 +123,7 @@ docs[0].metadata['source']
 
 ## Data Transformation
 
-After loading the documents we may want to transform them to better suit our needs. The most obvious transformation is to split large documents to smaller ones to fit into model's context window. 
+After loading the documents we may want to transform them to better suit our needs. The most obvious transformation is to split large documents to smaller ones to fit into the model's context window. 
 
 Langchain has the capability to split documents using various strategies - 
 - Split by character 
@@ -135,7 +132,7 @@ Langchain has the capability to split documents using various strategies -
 - Recursively split by character
 - MarkdownHeaderTextSplitter
 
-Here, we'll be using the Recursive splitting strategy since it is used most commonly. https://python.langchain.com/docs/modules/data_connection/document_transformers/text_splitters/recursive_text_splitter
+Here, we'll be using the Recursive splitting strategy since it is used most commonly. [https://python.langchain.com/docs/modules/data_connection/document_transformers/text_splitters/recursive_text_splitter](https://python.langchain.com/docs/modules/data_connection/document_transformers/text_splitters/recursive_text_splitter)
 
 
 ```python
@@ -181,7 +178,7 @@ texts[0].page_content
 
 ## Embedding Documents
 
-Now that we have our documents in a required length, we need to project them on to some embedding space for efficient search and retrieval based on a query. `Langchain` allows us to do that using multiple embedding models from various libraries including - 
+Now that we have our documents in the required length, we need to project them onto some embedding space for efficient search and retrieval based on a query. `Langchain` allows us to do that using multiple embedding models from various libraries including - 
 - OpenAI
 - Cohere
 - Huggingface Sentence Transformers, etc.
@@ -223,7 +220,7 @@ doc_embeddings[0]
 
 ## Vector Database
 
-Vector databases allows users to store, search and retrieve over unstructured documents. Documents are embedded and stored in the database which can be queried using natural language queries and top of that libraries like `chroma db` provide functionalities to query using the metadata as well. `Langchains` provide multiple integrations for creating vector db - 
+Vector databases allows users to store, search and retrieve unstructured documents. Documents are embedded and stored in the database which can be queried using natural language queries and on top of that libraries like `chroma db` provide functionalities to query using the metadata as well. `Langchain` provide multiple integrations for creating vector db - 
 - Chroma db
 - Weaviate
 - FAISS, etc.
@@ -262,7 +259,7 @@ docs[0].metadata
 
 ## LLM 
 
-Here as well `Langchain` provides capabilities to integrate with multiple organizations providing LLMs. The most common ones being - 
+Here as well `Langchain` provides capabilities to integrate with multiple organizations providing LLMs. The most common ones are - 
 - OpenAI
 - HuggingFace
 - Cohere
@@ -272,9 +269,9 @@ Using its Huggingface Pipeline integration we can only solve the following tasks
 
 - summarization 
 - text generation 
-- text2text summarization  https://github.com/hwchase17/langchain/blob/master/langchain/llms/huggingface_pipeline.py
+- text2text summarization  [https://github.com/hwchase17/langchain/blob/master/langchain/llms/huggingface_pipeline.py](https://github.com/hwchase17/langchain/blob/master/langchain/llms/huggingface_pipeline.py)
 
-It also provides us a way to integrate custom LLMs https://python.langchain.com/docs/modules/model_io/models/llms/how_to/custom_llm
+It also provides us a way to integrate custom LLMs [https://python.langchain.com/docs/modules/model_io/models/llms/how_to/custom_llm](https://python.langchain.com/docs/modules/model_io/models/llms/how_to/custom_llm)
 
 
 ```python
@@ -342,13 +339,13 @@ llm = customLLM()
 
 ## LLM Chain
 
-One of the main use cases of langchain is creating chain of LLMs. We can chain together multiple LLMs to get better results of our query and also use these LLM chains to build a QnA type data on our documents.
+One of the main use cases of langchain is creating chain of LLMs. We can chain together multiple LLMs to get better results for our query and also use these LLM chains to build QnA type data on our documents.
 
 There are many inbuilt chains available in `Langchain` that help us create the search and retrieval QnA - 
 
-- Retrieval QA - https://python.langchain.com/docs/modules/chains/popular/vector_db_qa
-- Conversational QA - https://python.langchain.com/docs/modules/chains/popular/chat_vector_db
-- Document QA - https://python.langchain.com/docs/modules/chains/additional/question_answering
+- Retrieval QA - [https://python.langchain.com/docs/modules/chains/popular/vector_db_qa](https://python.langchain.com/docs/modules/chains/popular/vector_db_qa)
+- Conversational QA - [https://python.langchain.com/docs/modules/chains/popular/chat_vector_db](https://python.langchain.com/docs/modules/chains/popular/chat_vector_db)
+- Document QA - [https://python.langchain.com/docs/modules/chains/additional/question_answering](https://python.langchain.com/docs/modules/chains/popular/chat_vector_db)
 
 
 
@@ -384,15 +381,7 @@ retriever_qa = RetrievalQA.from_chain_type(llm, chain_type="map_reduce", retriev
 retriever_qa.run(query)
 ```
 
-    Token indices sequence length is longer than the specified maximum sequence length for this model (1565 > 1024). Running this sequence through the model will result in indexing errors
-
-
-
-
-
     'Dopamine is activating or changing our propensity to do certain things and get us into action or prevent us from doing certain things and prevent action.'
-
-
 
 
 ```python
@@ -405,14 +394,10 @@ query = "question : How to prevent hair loss? Give detailed explanation , contex
 retriever_qa.run(query)
 ```
 
-    Token indices sequence length is longer than the specified maximum sequence length for this model (1604 > 1024). Running this sequence through the model will result in indexing errors
-
-
-
-
-
     "There's a lot of different things that you can do that are topical. The most promising is called dutasteride mesotherapy."
 
 
 
-**The answers given here greatly depends on the type of LLM we use. Here the LLM is fine tuned to perform text2text generation we can also use different LLM which could be trained on summarization, qna or sime text generation**
+**The answers given here greatly depends on the type of LLM we use. Here the LLM is fine-tuned to perform text2text generation we can also use different LLM which could be trained on summarization, qna or sime text generation**
+
+
