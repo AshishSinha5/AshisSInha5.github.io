@@ -282,17 +282,18 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
 ```python
+
 class customLLM(LLM):
-    model_name = "google/flan-t5-large"
-    tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-large")
-    model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-large", 
-                                                       device_map="auto",
-                                                       cache_dir="/home/ubuntu/models/")
-    pipeline = pipeline("text2text-generation", 
-                        model=model, 
-                        tokenizer=tokenizer,
+    model_name = "psmathur/orca_mini_7b"
+    # tokenizer = T5Tokenizer.from_pretrained(model_name)
+    # model = T5ForConditionalGeneration.from_pretrained(model_name, 
+    #                                                    device_map="auto",
+    #                                                    cache_dir="/home/ubuntu/models/")
+    pipeline = pipeline("text-generation", 
+                        model=model_name, 
                         device_map = 'auto', 
-                        model_kwargs={"torch_dtype":torch.bfloat16})
+                        model_kwargs={"torch_dtype":torch.bfloat16, 
+                                       "cache_dir": "/home/ubuntu/models/hugging_face/"})
 
     def _call(self, prompt, stop=None):
         return self.pipeline(prompt, max_length=9999)[0]["generated_text"]
@@ -304,32 +305,6 @@ class customLLM(LLM):
     def _llm_type(self):
         return "custom"
 
-# model_name = "google/flan-t5-large"
-# tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-large")
-# model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-large", 
-#                                                    device_map="auto",
-#                                                    cache_dir="/home/ubuntu/models/")
-
-# model_id = "tiiuae/falcon-7b"
-
-# tokenizer = AutoTokenizer.from_pretrained(model_id)
-# model = AutoModelForCausalLM.from_pretrained(model_id,
-#                                              device_map="auto",
-                                             
-# pipeline = transformers.pipeline(
-#     "text-generation",
-#     model=model,
-#     tokenizer=tokenizer,
-#     torch_dtype=torch.bfloat16,
-#     trust_remote_code=True,
-#     device_map="auto",
-# )
-
-# pipe = pipeline("text2text-generation", 
-#                 model=model, 
-#                 tokenizer=tokenizer,
-#                 device_map="auto", 
-#                 model_kwargs={"torch_dtype":torch.bfloat16})
 ```
 
 
@@ -362,42 +337,44 @@ from langchain.chains import RetrievalQA
 
 
 ```python
-query = "What is dopamine? Explain in detail?"
-# result = qa({"question": query})
+retriever_qa = RetrievalQA.from_chain_type(llm, 
+                                           chain_type="stuff",
+                                           retriever=db.as_retriever())
 ```
 
 
 ```python
-# result['answer']
+query = "Who is the main speaker in the conversation?"
+result = retriever_qa(query)
+print(result["result"].split('Question')[-1])
 ```
+
+
+    : Who is the main speaker in the conversation?
+    Helpful Answer: I'm not sure. ANDREW HUBERMAN: I'm sorry. LEX FRIDMAN: I'm sorry. ANDREW HUBERMAN: I'm sorry. LEX FRIDMAN: I'm sorry. ANDREW HUBERMAN: I'm sorry. LEX FRIDMAN: I'm sorry. ANDREW HUBERMAN: I'm sorry. LEX FRIDAMAN: I'm sorry. I'm sorry. I'm I'm I'm I'm I'm I'm I'm I'm I'm I'm I'm I'm I's I'm I'm I's I's I's I's I's I's I'm, I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's I's, I's I's I's, I's, I's I's I's I's I's, I's I's, I's, I's, I's, I's I's I's I's, I's, I's, I's, I's, I's, I's. I's. I's.
+
 
 
 ```python
-retriever_qa = RetrievalQA.from_chain_type(llm, chain_type="map_reduce", retriever=db.as_retriever())
+query = "Who is andrew huberman and what does he do?"
+result = retriever_qa(query)
+print(result["result"].split('Question')[-1])
 ```
 
+    : Who is andrew huberman and what does he do?
+    Helpful Answer: Andrew Huberman is a neurobiologist and ophthalmologist at Stanford University School of Medicine. He is known for his research on the neural basis of vision, as well as his work on the genetics of eye diseases. In addition to his research, Dr. Huberman is also an accomplished artist and has exhibited his work in galleries around the world.
 
 ```python
-retriever_qa.run(query)
+query = "What is dopamine? Explain in detail."
+result = retriever_qa(query)
+print(result["result"].split('Question')[-1])
 ```
 
-    'Dopamine is activating or changing our propensity to do certain things and get us into action or prevent us from doing certain things and prevent action.'
-
-
-```python
-query = "question : How to prevent hair loss? Give detailed explanation , context : use documents containing hair in the db"
-# result = qa({"question": query})
-```
-
-
-```python
-retriever_qa.run(query)
-```
-
-    "There's a lot of different things that you can do that are topical. The most promising is called dutasteride mesotherapy."
+    : What is dopamine? Explain in detail.
+    Helpful Answer: Dopamine is a neurotransmitter that is produced in the brain and plays a role in various functions such as movement, motivation, reward, and pleasure. It is often referred to as the "feel-good" neurotransmitter because it is associated with feelings of pleasure and happiness. Dopamine is also involved in regulating mood, attention, learning, and the perception of pain. The brain has several different dopamine pathways, each of which has a unique function. The mesocortical pathway, for example, is involved in regulating mood and motivation, while the tuberoinfundibular pathway is involved in regulating the release of hormones from the pituitary gland. Dopamine is a highly regulated neurotransmitter, and its levels can be influenced by a variety of factors such as diet, stress, and medication
 
 
 
-**The answers given here greatly depends on the type of LLM we use. Here the LLM is fine-tuned to perform text2text generation we can also use different LLM which could be trained on summarization, qna or sime text generation**
+**The answers given here greatly depends on the type of LLM we use. Here the LLM is finetuned to perform text generation we can also use different LLM which could be trained on summerization or qna**
 
 
