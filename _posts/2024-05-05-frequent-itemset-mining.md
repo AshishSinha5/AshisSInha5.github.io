@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Frequent Itemset Mining"
-date: 2024-05-06 00:10
+date: 2024-05-05 00:10
 category: blog
 headerImage: false
 tag:
